@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pigeon Counter with YOLO</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        header {
+            background: #4a6fc7;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .description {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            color: #f8f9fa;
+        }
+        
+        .main-content {
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .camera-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        #video {
+            width: 100%;
+            max-width: 600px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            background: #333;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        button {
+            padding: 12px 25px;
+            background: #4a6fc7;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:hover {
+            background: #3a5bb0;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        #capture-btn {
+            background: #28a745;
+        }
+        
+        #capture-btn:hover {
+            background: #218838;
+        }
+        
+        #reset-btn {
+            background: #dc3545;
+        }
+        
+        #reset-btn:hover {
+            background: #c82333;
+        }
+        
+        .results-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .count-display {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #4a6fc7;
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin: 20px 0;
+        }
+        
+        #canvas {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 600px;
+        }
+        
+        .instructions h2 {
+            color: #4a6fc7;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .instructions ol {
+            padding-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            color: white;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .count-display {
+                font-size: 2.5rem;
+            }
+            
+            button {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Pigeon Counter with YOLO</h1>
+            <p class="description">Use your phone's camera and AI to count pigeons</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="camera-section">
+                <video id="video" autoplay playsinline></video>
+                <div class="controls">
+                    <button id="start-camera">Start Camera</button>
+                    <button id="capture-btn">Capture & Count</button>
+                    <button id="reset-btn">Reset</button>
+                </div>
+            </div>
+            
+            <div class="results-section">
+                <h2>Pigeons Detected: <span class="count-display">0</span></h2>
+                <div class="canvas-container">
+                    <canvas id="canvas"></canvas>
+                </div>
+            </div>
+            
+            <div class="instructions">
+                <h2>How to Use</h2>
+                <ol>
+                    <li>Click "Start Camera" to enable your phone's camera</li>
+                    <li>Point your camera at the pigeons you want to count</li>
+                    <li>Click "Capture & Count" to process the image</li>
+                    <li>The AI will detect and count pigeons, drawing boxes around them</li>
+                    <li>Use "Reset" to start over with a new count</li>
+                </ol>
+                <p><strong>Note:</strong> This demo uses a simulated YOLO model. In a real implementation, it would connect to an actual YOLO machine learning model.</p>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>Pigeon Counter using YOLO Machine Learning | Designed for mobile use</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            const startCameraBtn = document.getElementById('start-camera');
+            const captureBtn = document.getElementById('capture-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const countDisplay = document.querySelector('.count-display');
+            
+            let stream = null;
+            let pigeonsCount = 0;
+            
+            // Start camera when button is clicked
+            startCameraBtn.addEventListener('click', async function() {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { facingMode: 'environment' } 
+                    });
+                    video.srcObject = stream;
+                    startCameraBtn.disabled = true;
+                    captureBtn.disabled = false;
+                } catch (err) {
+                    alert('Error accessing camera: ' + err.message);
+                }
+            });
+            
+            // Capture image and simulate YOLO processing
+            captureBtn.addEventListener('click', function() {
+                if (!stream) {
+                    alert('Please start the camera first.');
+                    return;
+                }
+                
+                // Set canvas dimensions to match video
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                
+                // Draw current video frame to canvas
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // Simulate YOLO processing (in a real app, this would call a YOLO model)
+                simulateYOLODetection();
+            });
+            
+            // Reset the counter and canvas
+            resetBtn.addEventListener('click', function() {
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                pigeonsCount = 0;
+                countDisplay.textContent = '0';
+                captureBtn.disabled = false;
+            });
+            
+            // Simulate YOLO detection (this is a placeholder for real YOLO implementation)
+            function simulateYOLODetection() {
+                // In a real implementation, this would call a YOLO model
+                // For this demo, we'll simulate detection with random boxes
+                
+                // Clear previous boxes
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // Generate random number of pigeons between 1-10
+                pigeonsCount = Math.floor(Math.random() * 10) + 1;
+                countDisplay.textContent = pigeonsCount;
+                
+                // Draw simulated detection boxes
+                for (let i = 0; i < pigeonsCount; i++) {
+                    const x = Math.random() * (canvas.width - 100);
+                    const y = Math.random() * (canvas.height - 100);
+                    const width = 50 + Math.random() * 80;
+                    const height = 50 + Math.random() * 80;
+                    
+                    // Draw bounding box
+                    context.lineWidth = 3;
+                    context.strokeStyle = '#FF5252';
+                    context.strokeRect(x, y, width, height);
+                    
+                    // Draw label background
+                    context.fillStyle = '#FF5252';
+                    context.fillRect(x, y - 20, 80, 20);
+                    
+                    // Draw label text
+                    context.fillStyle = 'white';
+                    context.font = '16px Arial';
+                    context.fillText('Pigeon', x + 5, y - 5);
+                }
+                
+                // Display message about simulation
+                context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                context.fillRect(10, 10, 400, 40);
+                context.fillStyle = 'white';
+                context.font = '16px Arial';
+                context.fillText('Simulated YOLO Detection - ' + pigeonsCount + ' pigeons found', 20, 35);
+            }
+            
+            // Disable capture button initially
+            captureBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>
